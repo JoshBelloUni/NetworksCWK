@@ -11,7 +11,6 @@ public class MultiThreadedServer {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Client connected: " + clientSocket);
 
-                // Create a new thread for each client
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
                 Thread thread = new Thread(clientHandler);
                 thread.start();
