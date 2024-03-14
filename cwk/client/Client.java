@@ -9,15 +9,44 @@ public class Client {
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 
+        // thread for reading server responses
+        Thread responseThread = new Thread(() -> {
+            try {
+                String response;
+                while ((response = in.readLine()) != null) {
+                    System.out.println(response);
+                    System.out.print(">>> ");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        responseThread.start();
+
         String userInputLine;
-        while ((userInputLine = userInput.readLine()) != null) {
-            out.println(userInputLine);
-            System.out.println("Server response: " + in.readLine());
+        while (true) {
+            System.out.print(">>> ");
+
+            userInputLine = userInput.readLine();
+            if (userInputLine != null) {
+                out.println(userInputLine);
+
+                // Check if the user wants to exit
+                if (userInputLine.equalsIgnoreCase("exit")) {
+                    break;
+                }
+            }
         }
 
         userInput.close();
-        in.close();
         out.close();
         socket.close();
+
+        // Wait for the response thread to finish
+        try {
+            responseThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

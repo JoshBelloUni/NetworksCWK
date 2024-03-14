@@ -9,37 +9,46 @@ class ClientHandler implements Runnable {
         this.clientSocket = clientSocket;
     }
 
-    /* 
-    private void listFiles(PrintWriter out) {
-        out.println("printing...");
-        System.out.println("Inside listFiles() method.");
-        File folder = new File("server/serverFiles");
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile()) {
-                    out.println(file.getName());;
+    static void listFiles(PrintWriter out) {
+
+        System.out.println("Printing Files...");    // print to server
+        out.println("Printing Files...");           // print to client
+
+        File folder = new File("cwk/server/serverFiles");
+
+        // check folder exists
+        if (!folder.exists() || !folder.isDirectory()) {
+            out.println("Folder not found");
+        } else {
+            out.println("folder exists");
+
+            File[] files = folder.listFiles();
+            
+            // iterate thru files and print the name to the client
+            if (files != null && files.length > 0) {
+                out.println("Files available:");
+                for (File file : files) {
+                    if (file.isFile()) {
+                        out.println(file.getName());
+                    }
                 }
+            } else {
+                out.println("No files available");
             }
         }
     }
-    */
+
     public void run() {
         try {
+
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
                 System.out.println("Received from client: " + inputLine);               
-
                 if (inputLine.equals("list")) {
-                    System.out.println("Printing Files"); 
-                    out.println("printing...");
-                    File folder = new File("server/serverFiles");
-                    File[] files = folder.listFiles();
-
-                    out.println(files);
+                    listFiles(out);
                 }
                 else {
                     out.println("Server echoed: " + inputLine);
@@ -49,8 +58,15 @@ class ClientHandler implements Runnable {
             in.close();
             out.close();
             clientSocket.close();
+
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Client disconnected: " + e.getMessage());
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
