@@ -14,13 +14,13 @@ class ClientHandler implements Runnable {
         System.out.println("Printing Files...");    // print to server
         out.println("Printing Files...");           // print to client
 
-        File folder = new File("cwk/server/serverFiles");
+        File folder = new File("./serverFiles");
 
         // check folder exists
         if (!folder.exists() || !folder.isDirectory()) {
             out.println("Folder not found");
         } else {
-            out.println("folder exists");
+            out.println("Folder exists");
 
             File[] files = folder.listFiles();
             

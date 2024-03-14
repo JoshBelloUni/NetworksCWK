@@ -15,6 +15,10 @@ public class MultiThreadedServer {
             while (true) {
                 Socket client = serverSocket.accept();
                 System.out.println("Client Connected:");
+                System.out.println("    IP Address: " + client.getInetAddress().getHostAddress());
+                System.out.println("    Host Name: " + client.getInetAddress().getHostName());
+                System.out.println("    Port Number: " + client.getPort());
+                System.out.println("    Socket Address: " + client.getRemoteSocketAddress());
 
                 ClientHandler clientHandler = new ClientHandler(client);
                 service.submit(clientHandler);
