@@ -15,33 +15,40 @@ public class Client {
                 String response;
                 while ((response = in.readLine()) != null) {
                     System.out.println(response);
-                    in.close();
-                    out.close();
-                    socket.close();
+                    if (!in.ready()) {
+                        break;
+                    }
                 }
                 // catch error
             } catch (IOException e) {
                 e.printStackTrace();
-                // if there is a response, close    
+            } finally {
+                try {
+                    in.close();
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
         responseThread.start();
 
         if (args.length == 0) {
             System.out.println("Usage: Client [command] [fname]");
-            out.close();
-            socket.close();
+            out.println("None");
         } else {
             out.println(args[0]);
         }
-        
+
         // close on error
         try {
             responseThread.join();
             out.close();
             socket.close();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         }
+        System.out.println("Disconnecting:");
+
     }
 }
