@@ -43,6 +43,7 @@ public class Server {
     }
 }
 
+// function to handle listing the files
 class ClientHandler implements Runnable {
     private Socket clientSocket;
 
@@ -61,10 +62,7 @@ class ClientHandler implements Runnable {
         if (!folder.exists() || !folder.isDirectory()) {
             out.println("Folder not found");
         } else {
-            out.println("Folder exists");
-
             File[] files = folder.listFiles();
-            
             // iterate thru files and print the name to the client
             if (files != null && files.length > 0) {
                 out.println("Files available:");
@@ -80,6 +78,29 @@ class ClientHandler implements Runnable {
         }
     }
 
+    // function to handle putting the file onto the server
+    static void putFile(PrintWriter out, String fname, Socket socket) {
+        try {
+            System.out.println("Accepting file: " + fname);
+            out.println("File on server input stream: " + fname);
+            InputStream fileInput = socket.getInputStream();
+            FileOutputStream fileOutput = new FileOutputStream("./serverFiles/" + fname);
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            while ((bytesRead = fileInput.read(buffer)) != -1) {
+                fileOutput.write(buffer, 0, bytesRead);
+            }
+            out.println("File received successfully.");
+            fileInput.close();
+            fileOutput.close();
+            System.out.println("File received successfully.");
+
+        } catch (IOException e) {
+            System.out.println("Unable to put file");
+        }
+    }
+
     public void run() {
         try {
 
@@ -91,10 +112,18 @@ class ClientHandler implements Runnable {
                 System.out.println("Received from client: " + inputLine);               
                 if (inputLine.equals("list")) {
                     listFiles(out);
-                } else if (inputLine.equals("None")) {
-                    out.println("No Command Line Input");
+                } else if (inputLine.equals("put")) {
+                    String fileName = in.readLine();
+                    if (fileName != null) {
+                        putFile(out, fileName, clientSocket);
+                    } else {
+                        System.out.println("Error: No file specified");
+                    }
                 }
             }
+
+            in.close();
+            out.close();
             System.out.println("Client Disconnected");
 
         } catch (IOException e) {
