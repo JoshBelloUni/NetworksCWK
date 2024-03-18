@@ -1,8 +1,11 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.Buffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 
 public class Server {
 
@@ -58,7 +61,7 @@ class ClientHandler implements Runnable {
 
         File folder = new File("./serverFiles");
 
-        // check folder exists
+        // check folder exists and if its a dir
         if (!folder.exists() || !folder.isDirectory()) {
             out.println("Folder not found");
         } else {
@@ -83,11 +86,14 @@ class ClientHandler implements Runnable {
         try {
             System.out.println("Accepting file: " + fname);
             out.println("File on server input stream: " + fname);
+
+            // set up the input to he the stream from the client
             InputStream fileInput = socket.getInputStream();
             FileOutputStream fileOutput = new FileOutputStream("./serverFiles/" + fname);
             byte[] buffer = new byte[1024];
             int bytesRead;
 
+            // iterate thru the bytes
             while ((bytesRead = fileInput.read(buffer)) != -1) {
                 fileOutput.write(buffer, 0, bytesRead);
             }
@@ -101,24 +107,63 @@ class ClientHandler implements Runnable {
         }
     }
 
+    // function to print to the log file
+    static void logRequest(String request, Socket clientSocket) {
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDateTime = currentDateTime.format(formatter);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("logfile.txt", true))) {
+            writer.write(formattedDateTime + "|");
+            writer.write(request + "|");
+            writer.write(clientSocket.getInetAddress().getHostAddress() + "\n");
+        } catch (IOException e) {
+            System.out.println("An error occurred while writing to the file: " + e.getMessage());
+        }
+    }
+
+    static boolean checkFileExists(String fname) {
+        File file = new File("./serverFiles/" + fname);
+        if (file.exists()) {
+            System.out.println("File already exists: " + fname);
+            return true;
+        }
+        System.out.println("File does not exist: " + fname);
+        return false;
+    }
+
     public void run() {
         try {
 
+            // initialise the server input and output
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 
+            // read from the input buffer
             String inputLine;
             while ((inputLine = in.readLine()) != null) {
-                System.out.println("Received from client: " + inputLine);               
+                System.out.println("Received from client: " + inputLine);
+                
+                // handling list command
                 if (inputLine.equals("list")) {
                     listFiles(out);
+                    logRequest("list", clientSocket);
+
+                // handling put command
                 } else if (inputLine.equals("put")) {
-                    String fileName = in.readLine();
+                    String fileName = in.readLine();    // read extra line for the filename input
                     if (fileName != null) {
-                        putFile(out, fileName, clientSocket);
-                    } else {
-                        System.out.println("Error: No file specified");
+                        if (checkFileExists(fileName) == false) {
+                            putFile(out, fileName, clientSocket);
+                            logRequest("put " + fileName, clientSocket);
+                        } else {
+                            out.println("File already exists on server: " + fileName);
+                            // clear the buffered reader from the contents of the file
+                            in.readLine();
+                        }
                     }
+                } else if (inputLine.equals("invalid")) {
+                    out.println("Invalid data recieved");
                 }
             }
 
