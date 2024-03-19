@@ -114,8 +114,8 @@ class ClientHandler implements Runnable {
         String formattedDateTime = currentDateTime.format(formatter);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("logfile.txt", true))) {
-            writer.write(formattedDateTime + "|");
-            writer.write(request + "|");
+            writer.write(formattedDateTime + " | ");
+            writer.write(request + " | ");
             writer.write(clientSocket.getInetAddress().getHostAddress() + "\n");
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the file: " + e.getMessage());
