@@ -16,6 +16,8 @@ public class Client {
 
     static void sendFile(String fname, Socket socket) {
 
+        System.out.println(socket.isClosed());
+
         try {
             System.out.println("Sending file data to input stream");
 
@@ -45,7 +47,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws IOException {
-        Socket socket = new Socket("localhost", 12345);
+        Socket socket = new Socket("localhost", 9555);
 
         // input and output buffers
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -65,13 +67,6 @@ public class Client {
                 // catch error
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                try {
-                    in.close();
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         });
         responseThread.start();
@@ -102,19 +97,14 @@ public class Client {
             }
         }
 
+        // wait for response to exit
         try {
             System.out.println("Waiting for response");
             responseThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
-            // Close resources and disconnect
-            try {
-                out.close();
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            socket.close();
             System.out.println("Disconnecting...");
         }
     }

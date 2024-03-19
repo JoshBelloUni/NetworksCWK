@@ -14,8 +14,8 @@ public class Server {
 
         ExecutorService service = Executors.newFixedThreadPool(20);
 
-        try (ServerSocket serverSocket = new ServerSocket(12345)) {
-            System.out.println("Server started. Listening on port 12345...");
+        try (ServerSocket serverSocket = new ServerSocket(9555)) {
+            System.out.println("Server started. Listening on port 9555...");
 
             while (true) {
                 Socket client = serverSocket.accept();
@@ -33,10 +33,6 @@ public class Server {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (service != null) {
-                service.shutdown();
-            }
         }
     }
 
@@ -57,13 +53,14 @@ class ClientHandler implements Runnable {
     static void listFiles(PrintWriter out) {
 
         System.out.println("Printing Files...");    // print to server
-        out.println("Printing Files...");           // print to client
 
-        File folder = new File("./serverFiles");
+        File folder = new File("./serverFiles/");
+        
 
         // check folder exists and if its a dir
         if (!folder.exists() || !folder.isDirectory()) {
             out.println("Folder not found");
+            System.out.println("Folder not found");
         } else {
             File[] files = folder.listFiles();
             // iterate thru files and print the name to the client
@@ -85,6 +82,7 @@ class ClientHandler implements Runnable {
     static void putFile(PrintWriter out, String fname, Socket socket) {
         try {
             System.out.println("Accepting file: " + fname);
+
             out.println("File on server input stream: " + fname);
 
             // set up the input to he the stream from the client
@@ -115,8 +113,9 @@ class ClientHandler implements Runnable {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("logfile.txt", true))) {
             writer.write(formattedDateTime + " | ");
-            writer.write(request + " | ");
-            writer.write(clientSocket.getInetAddress().getHostAddress() + "\n");
+            writer.write(clientSocket.getInetAddress().getHostAddress() + " | ");
+            writer.write(request + "\n");
+
         } catch (IOException e) {
             System.out.println("An error occurred while writing to the file: " + e.getMessage());
         }
@@ -157,9 +156,12 @@ class ClientHandler implements Runnable {
                             putFile(out, fileName, clientSocket);
                             logRequest("put " + fileName, clientSocket);
                         } else {
-                            out.println("File already exists on server: " + fileName);
+                            out.println("File already exists on server: ");
+                            logRequest("put " + fileName, clientSocket);
                             // clear the buffered reader from the contents of the file
-                            in.readLine();
+                            while ((inputLine = in.readLine()) != null) {
+                                in.readLine();
+                            }
                         }
                     }
                 } else if (inputLine.equals("invalid")) {
@@ -167,19 +169,18 @@ class ClientHandler implements Runnable {
                 }
             }
 
+
+
             in.close();
             out.close();
+
             System.out.println("Client Disconnected");
 
         } catch (IOException e) {
             System.out.println("Client Disconnected: " + e.getMessage());
+            e.printStackTrace();
         } finally {
-            try {
-                clientSocket.close();
-                Server.decrementConnectedClients();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            Server.decrementConnectedClients();
         }
     }
 }
